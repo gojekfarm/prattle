@@ -11,8 +11,8 @@ func TestPrattleWithMoreThanOneNode(t *testing.T) {
 	assert.Nil(t, errOne)
 	assert.Nil(t, errTwo)
 	assert.Equal(t, prattleOne.Members(), prattleTwo.Members())
-	assert.Equal(t, prattleOne.members.LocalNode().Port, 9000)
-	assert.Equal(t, prattleTwo.members.LocalNode().Port, 9001)
+	assert.Equal(t, int(prattleOne.members.LocalNode().Port), 9000)
+	assert.Equal(t, int(prattleTwo.members.LocalNode().Port), 9001)
 	assert.Equal(t, 2, prattleOne.members.NumMembers())
 	assert.Equal(t, 2, prattleOne.broadcasts.NumNodes())
 	assert.Equal(t, 3, prattleOne.broadcasts.RetransmitMult)
@@ -63,12 +63,4 @@ func TestSetWhenKeyAlreadyExist(t *testing.T) {
 	newValue, _ := prattle.Get("ping")
 	assert.Equal(t, "pong2", newValue)
 	defer prattle.Shutdown()
-}
-
-func TestMembers(t *testing.T) {
-	prattleOne, _ := NewPrattle("0.0.0.0:9000,0.0.0.0:9001", 9000)
-	prattleTwo, _ := NewPrattle("0.0.0.0:9000,0.0.0.0:9001", 9001)
-	assert.Equal(t, 2, len(prattleOne.Members()))
-	prattleTwo.Shutdown()
-	prattleOne.Shutdown()
 }

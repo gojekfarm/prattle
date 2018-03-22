@@ -73,7 +73,7 @@ func (gdb *Prattle) Set(key string, value interface{}) {
 func (gdb *Prattle) Members() []string {
 	a := []string{}
 	for _, m := range gdb.members.Members() {
-		a = append(a, m.Name)
+		a = append(a, string(m.Addr))
 	}
 	return a
 }
