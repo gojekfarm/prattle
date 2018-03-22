@@ -1,0 +1,83 @@
+package prattle
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/hashicorp/memberlist"
+)
+
+type Pair struct {
+	Key   string
+	Value interface{}
+}
+
+type Prattle struct {
+	members    *memberlist.Memberlist
+	broadcasts *memberlist.TransmitLimitedQueue
+	database   *db
+}
+
+func NewPrattle(members string, port int) (*Prattle, error) {
+	d := newDb()
+
+	b := &memberlist.TransmitLimitedQueue{
+		RetransmitMult: 3,
+	}
+
+	del := &delegate{
+		getBroadcasts: func(overhead, limit int) [][]byte {
+			return b.GetBroadcasts(overhead, limit)
+		},
+		notifyMsg: func(b []byte) {
+			pair := &Pair{}
+			json.Unmarshal(b, pair)
+			d.Save(pair.Key, pair.Value)
+		},
+	}
+
+	m, err := newMemberlist(port, members, del)
+	if err != nil {
+		return nil, err
+	}
+
+	b.NumNodes = func() int {
+		return m.NumMembers()
+	}
+
+	return &Prattle{
+		members:    m,
+		broadcasts: b,
+		database:   d,
+	}, nil
+}
+
+func (gdb *Prattle) Get(k string) (interface{}, bool) {
+	value, found := gdb.database.Get(k)
+	return value, found
+}
+
+func (gdb *Prattle) Set(key string, value interface{}) {
+	gdb.database.Save(key, value)
+	pair := &Pair{Key: key, Value: value}
+	message, err := json.Marshal(pair)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	gdb.broadcasts.QueueBroadcast(&broadcast{
+		msg:    message,
+		notify: nil,
+	})
+}
+
+func (gdb *Prattle) Members() []string {
+	a := []string{}
+	for _, m := range gdb.members.Members() {
+		a = append(a, m.Name)
+	}
+	return a
+}
+
+func (gdb *Prattle) Shutdown() {
+	gdb.members.Shutdown()
+}

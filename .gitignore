@@ -1,0 +1,6 @@
+.idea/*
+vendor/
+build/
+out/
+.#*
+.idea/vcs.xml
