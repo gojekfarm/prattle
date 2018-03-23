@@ -51,33 +51,33 @@ func NewPrattle(members string, port int) (*Prattle, error) {
 	}, nil
 }
 
-func (gdb *Prattle) Get(k string) (interface{}, bool) {
-	value, found := gdb.database.Get(k)
+func (p *Prattle) Get(k string) (interface{}, bool) {
+	value, found := p.database.Get(k)
 	return value, found
 }
 
-func (gdb *Prattle) Set(key string, value interface{}) {
-	gdb.database.Save(key, value)
+func (p *Prattle) Set(key string, value interface{}) {
+	p.database.Save(key, value)
 	pair := &Pair{Key: key, Value: value}
 	message, err := json.Marshal(pair)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	gdb.broadcasts.QueueBroadcast(&broadcast{
+	p.broadcasts.QueueBroadcast(&broadcast{
 		msg:    message,
 		notify: nil,
 	})
 }
 
-func (gdb *Prattle) Members() []string {
+func (p *Prattle) Members() []string {
 	a := []string{}
-	for _, m := range gdb.members.Members() {
+	for _, m := range p.members.Members() {
 		a = append(a, string(m.Addr))
 	}
 	return a
 }
 
-func (gdb *Prattle) Shutdown() {
-	gdb.members.Shutdown()
+func (p *Prattle) Shutdown() {
+	p.members.Shutdown()
 }
