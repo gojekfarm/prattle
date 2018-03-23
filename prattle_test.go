@@ -64,3 +64,17 @@ func TestSetWhenKeyAlreadyExist(t *testing.T) {
 	assert.Equal(t, "pong2", newValue)
 	defer prattle.Shutdown()
 }
+
+func TestWhenNewNodeJoinsPrattleCluster(t *testing.T) {
+	prattleOne, errOne := NewPrattle("", 9000)
+	assert.Nil(t, errOne)
+	prattleTwo, errTwo := NewPrattle("", 9001)
+	assert.Nil(t, errTwo)
+	assert.Equal(t, 1, prattleOne.members.NumMembers())
+	errThree := prattleTwo.JoinCluster("0.0.0.0:9000")
+	assert.Nil(t, errThree)
+	assert.Equal(t, 2, prattleOne.members.NumMembers())
+	assert.Equal(t, 2, prattleTwo.members.NumMembers())
+	defer prattleOne.Shutdown()
+	defer prattleTwo.Shutdown()
+}

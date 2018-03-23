@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/memberlist"
+	"log"
 )
 
 type Pair struct {
@@ -80,4 +81,13 @@ func (p *Prattle) Members() []string {
 
 func (p *Prattle) Shutdown() {
 	p.members.Shutdown()
+}
+
+func (p *Prattle) JoinCluster(siblingAddr string) error {
+	_, err := p.members.Join([]string{siblingAddr})
+	if (err != nil) {
+		log.Fatal("Could not join the cluster with sibling", siblingAddr)
+		return err
+	}
+	return nil
 }
