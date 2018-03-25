@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"io/ioutil"
+	"strconv"
 )
 
 // consul.Client makes it easy to communicate with the consul API
@@ -24,6 +26,10 @@ type Service struct {
 	Port              int
 	EnableTagOverride bool
 	Check             Check
+}
+
+type Instance struct {
+	Service Service
 }
 
 type Client struct {
@@ -55,6 +61,32 @@ func (c *Client) Register() error {
 	return nil
 }
 
+func (c *Client) FetchHealthyNode() (string, error) {
+	var instances []Instance
+	response, err := http.Get(c.healtyNodesUrl())
+	if err != nil {
+		return "", err
+	}
+	responseBodyBytes, responseErr := ioutil.ReadAll(response.Body)
+	if responseErr != nil {
+		return "", responseErr
+	}
+	//TODO: remove it as separate function
+	errUnmarshal := json.Unmarshal(responseBodyBytes, &instances)
+	if errUnmarshal != nil {
+		return "", errUnmarshal
+	}
+	fmt.Println(instances)
+	firstInstance := instances[0]
+	servicePort := strconv.FormatInt(int64(firstInstance.Service.Port), 10)
+	addr := firstInstance.Service.Address + ":" + servicePort
+	return addr, nil
+}
+
 func (c *Client) serviceRegistrationURL() string {
 	return c.url + "v1/agent/service/register"
+}
+
+func (c *Client) healtyNodesUrl() string {
+	return c.url + "v1/health/service/go-surge-app\\?passing"
 }
