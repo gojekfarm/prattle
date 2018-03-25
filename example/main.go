@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"github.com/divya2661/prattle"
+	"github.com/divya2661/prattle/prattle"
 )
 
 var (

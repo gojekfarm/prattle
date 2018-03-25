@@ -1,10 +1,18 @@
-hash: 1efc04aabe0569e7957c8a01e2c24d3770bd4bcc120d0cf9114718537017d578
-updated: 2018-03-22T20:09:13.415696+05:30
+hash: 29ab69658d2de4ef9cc8ed37d2f16055f18c4626f504c9bdf92ed064e773c8db
+updated: 2018-03-23T14:55:40.9291+05:30
 imports:
 - name: github.com/armon/go-metrics
   version: 0a12dc6f6b9da6da644031a1b9b5a85478c5ee27
+- name: github.com/BurntSushi/toml
+  version: 99064174e013895bbd9b025c31100bd1d9b590ca
+- name: github.com/hashicorp/consul
+  version: 9a494b5fb9c86180a5702e29c485df1507a47198
+  subpackages:
+  - api
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
+- name: github.com/hashicorp/go-cleanhttp
+  version: d5fe4b57a186c716b0e00b8c301cbd9b4182694d
 - name: github.com/hashicorp/go-immutable-radix
   version: 8aac2701530899b64bdea735a1de8da899815220
 - name: github.com/hashicorp/go-msgpack
@@ -13,6 +21,8 @@ imports:
   - codec
 - name: github.com/hashicorp/go-multierror
   version: 83588e72410abfbe4df460eeb6f30841ae47d4c4
+- name: github.com/hashicorp/go-rootcerts
+  version: 6bb64b370b90e7ef1fa532be9e591a81c3493e00
 - name: github.com/hashicorp/go-sockaddr
   version: 41949a141473f6340abc6ba0fcd0f89da6f6f837
 - name: github.com/hashicorp/golang-lru
@@ -21,16 +31,40 @@ imports:
   - simplelru
 - name: github.com/hashicorp/memberlist
   version: 687988a0b5daaf7ed5051e5e374aef27f8254822
+- name: github.com/hashicorp/serf
+  version: 3b250ce4404edb266330f53fcfc8ad0d0dacfae7
+  subpackages:
+  - coordinate
+- name: github.com/kr/pretty
+  version: e6ac2fc51e89a3249e82157fa0bb7a18ef9dd5bb
+- name: github.com/kr/text
+  version: e373e137fafd8abd480af49182dea0513914adb4
+- name: github.com/magiconair/properties
+  version: e16141290883c13645e0c7c1b3507af621f8ed8a
 - name: github.com/miekg/dns
   version: 689d334b0197696eac0afdaa67224aca9ce93eff
+- name: github.com/mitchellh/go-homedir
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/mitchellh/mapstructure
+  version: 281073eb9eb092240d33ef253c404f1cca550309
 - name: github.com/patrickmn/go-cache
   version: a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0
 - name: github.com/sean-/seed
   version: e2103e2c35297fb7e17febb81e49b312087a2372
+- name: github.com/spf13/cast
+  version: 4d07383ffe94b5e5a6fa3af9211374a4507a0184
+- name: github.com/spf13/jwalterweatherman
+  version: 3d60171a64319ef63c78bd45bd60e6eab1e75f8b
+- name: github.com/spf13/pflag
+  version: 67cbc198fd11dab704b214c1e629a97af392c085
+- name: github.com/spf13/viper
+  version: db7ff930a189b98d602179d9001d33345f42b8c7
 - name: github.com/stretchr/testify
   version: b91bfb9ebec76498946beb6af7c0230c7cc7ba6c
   subpackages:
   - assert
+- name: gopkg.in/yaml.v2
+  version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9

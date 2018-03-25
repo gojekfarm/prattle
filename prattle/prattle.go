@@ -83,6 +83,10 @@ func (p *Prattle) Shutdown() {
 	p.members.Shutdown()
 }
 
+//TODO: Add logic to recover node failures
+//1. Whenever new node join the cluster, it uses sibling address, as soon as it is joined
+// it will create a metadata file in system using which it can always join the cluster.
+//TODO: check is memberlist already does that
 func (p *Prattle) JoinCluster(siblingAddr string) error {
 	_, err := p.members.Join([]string{siblingAddr})
 	if (err != nil) {
