@@ -76,7 +76,9 @@ func (c *Client) FetchHealthyNode() (string, error) {
 	if errUnmarshal != nil {
 		return "", errUnmarshal
 	}
-	fmt.Println(instances)
+	if len(instances) == 0 {
+		return "", errors.New("")
+	}
 	firstInstance := instances[0]
 	servicePort := strconv.FormatInt(int64(firstInstance.Service.Port), 10)
 	addr := firstInstance.Service.Address + ":" + servicePort
