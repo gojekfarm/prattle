@@ -60,7 +60,7 @@ func TestThatIfConsulGivesAllHealthyNodesInCluster(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:8080", healthyNode)
 }
 
-func TestBla(t *testing.T) {
+func TestThatItReturnsErrorWHenConsulGivesNoMembers(t *testing.T) {
 	testserver := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		responseWriter.Write([]byte("[]"))
 		responseWriter.WriteHeader(200)
