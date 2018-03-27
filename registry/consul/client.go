@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"strconv"
+	"github.com/divya2661/prattle/config"
 )
 
 // consul.Client makes it easy to communicate with the consul API
@@ -41,12 +42,12 @@ func NewClient(url string, httpClient *http.Client) *Client {
 	return &Client{url: url, httpClient: httpClient}
 }
 
-func (c *Client) Register() error {
+func (c *Client) Register(discovery config.Discovery) error {
 	var response *http.Response
-	check := Check{DeregisterCriticalServiceAfter: "10m", HTTP: "", Interval: "1s"}
-	service := Service{ID: "", Address: "", EnableTagOverride: false, Tags: []string{}, Name: "", Port: 1234, Check: check}
+	check := Check{DeregisterCriticalServiceAfter: discovery.TTL, HTTP: discovery.HealthEndpoint, Interval: discovery.HealthPingInterval}
+	service := Service{ID: "----- todo -----", Address: discovery.Address, EnableTagOverride: false, Tags: []string{}, Name: discovery.Name, Port: discovery.Port, Check: check}
 	serviceBytes, _ := json.Marshal(service)
-	request, err := http.NewRequest("PUT", c.serviceRegistrationURL(), bytes.NewBuffer(serviceBytes))
+	request, err := http.NewRequest(http.MethodPut, c.serviceRegistrationURL(), bytes.NewBuffer(serviceBytes))
 	if err != nil {
 		return err
 	}

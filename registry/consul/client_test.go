@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"github.com/stretchr/testify/require"
+	"github.com/divya2661/prattle/config"
 )
 
 func TestThatItRegistersSuccessfullyWhenRegistrationResponseIsOK(t *testing.T) {
@@ -15,7 +16,16 @@ func TestThatItRegistersSuccessfullyWhenRegistrationResponseIsOK(t *testing.T) {
 		responseWriter.WriteHeader(200)
 	}))
 	consulURL := testserver.URL + "/"
-	err := NewClient(consulURL, &http.Client{}).Register()
+	discovery := config.Discovery{
+		TTL:                "10s",
+		HealthEndpoint:     "http://localhost:3000/",
+		HealthPingInterval: "10s",
+		Address:            "http://localhost",
+		Name:               "Test",
+		Port:               1000,
+		ConsulURL:          "http://localhost:8500/",
+	}
+	err := NewClient(consulURL, &http.Client{}).Register(discovery)
 	assert.NoError(t, err)
 }
 
@@ -24,7 +34,16 @@ func TestThatItDoesntRegisterTheServiceSuccessfullyWhenResponseIsNotOK(t *testin
 		responseWriter.WriteHeader(400)
 	}))
 	consulURL := testserver.URL + "/"
-	err := NewClient(consulURL, &http.Client{}).Register()
+	discovery := config.Discovery{
+		TTL:                "10s",
+		HealthEndpoint:     "http://localhost:3000/",
+		HealthPingInterval: "10s",
+		Address:            "http://localhost",
+		Name:               "Test",
+		Port:               1000,
+		ConsulURL:          "http://localhost:8500/",
+	}
+	err := NewClient(consulURL, &http.Client{}).Register(discovery)
 	assert.Error(t, err)
 }
 
