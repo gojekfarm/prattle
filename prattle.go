@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/memberlist"
 	"log"
+	"github.com/divya2661/prattle/registry"
 )
 
 type Pair struct {
@@ -18,9 +19,19 @@ type Prattle struct {
 	database   *db
 }
 
-func NewPrattle(members string, port int) (*Prattle, error) {
-	d := newDb()
+func NewPrattle(registry registry.Registry, port int) (*Prattle, error) {
+	var err error
 
+	member, err := registry.FetchHealthyNode()
+	if err != nil {
+		return nil, err
+	}
+
+	err = registry.Register()
+	if err != nil {
+		return nil, err
+	}
+	d := newDb()
 	b := &memberlist.TransmitLimitedQueue{
 		RetransmitMult: 3,
 	}
@@ -36,7 +47,7 @@ func NewPrattle(members string, port int) (*Prattle, error) {
 		},
 	}
 
-	m, err := newMemberlist(port, members, del)
+	m, err := newMemberlist(port, member, del)
 	if err != nil {
 		return nil, err
 	}

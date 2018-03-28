@@ -2,19 +2,42 @@ package prattle
 
 import (
 	"testing"
-	"time"
-
 	"github.com/stretchr/testify/assert"
+	"net/http/httptest"
+	"net/http"
+	"github.com/divya2661/prattle/registry/consul"
+	"github.com/divya2661/prattle/config"
+	"io/ioutil"
+	"github.com/stretchr/testify/require"
 )
 
+var discovery = config.Discovery{
+	TTL:                "10s",
+	HealthEndpoint:     "http://localhost:3000/",
+	HealthPingInterval: "10s",
+	Address:            "http://localhost",
+	Name:               "Test",
+	Port:               1000,
+	ConsulURL:          "http://localhost:8500",
+}
+
 func TestPrattleWithMoreThanOneNode(t *testing.T) {
-	prattleOne, errOne := NewPrattle("0.0.0.0:9000, 0.0.0.0:9001", 9000)
-	prattleTwo, errTwo := NewPrattle("0.0.0.0:9000, 0.0.0.0:9001", 9001)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattleOne, errOne := NewPrattle(client, 8080)
+	prattleTwo, errTwo := NewPrattle(client, 8081)
 	assert.Nil(t, errOne)
 	assert.Nil(t, errTwo)
 	assert.Equal(t, prattleOne.Members(), prattleTwo.Members())
-	assert.Equal(t, int(prattleOne.members.LocalNode().Port), 9000)
-	assert.Equal(t, int(prattleTwo.members.LocalNode().Port), 9001)
+	assert.Equal(t, int(prattleOne.members.LocalNode().Port), 8080)
+	assert.Equal(t, int(prattleTwo.members.LocalNode().Port), 8081)
 	assert.Equal(t, 2, prattleOne.members.NumMembers())
 	assert.Equal(t, 2, prattleOne.broadcasts.NumNodes())
 	assert.Equal(t, 3, prattleOne.broadcasts.RetransmitMult)
@@ -23,24 +46,51 @@ func TestPrattleWithMoreThanOneNode(t *testing.T) {
 }
 
 func TestNewPrattleWhenMemberAddressIsNotInUse(t *testing.T) {
-	prattle, err := NewPrattle("", 9000)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattle, err := NewPrattle(client, 8080)
+	defer prattle.Shutdown()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, prattle.members.NumMembers())
 	assert.Equal(t, 1, prattle.broadcasts.NumNodes())
 	assert.NotNil(t, prattle.database.connection)
-	defer prattle.Shutdown()
 }
 
 func TestPrattleWhenMemberAddressIsAlreadyInUse(t *testing.T) {
-	prattle, errOne := NewPrattle("", 9000)
-	_, errTwo := NewPrattle("", 9000)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattle, errOne := NewPrattle(client, 8080)
+	defer prattle.Shutdown()
+	_, errTwo := NewPrattle(client, 8080)
 	assert.Nil(t, errOne)
 	assert.NotNil(t, errTwo)
-	defer prattle.Shutdown()
 }
 
 func TestGetWhenKeyIsNotFound(t *testing.T) {
-	prattle, _ := NewPrattle("", 9000)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattle, _ := NewPrattle(client, 8080)
 	value, found := prattle.Get("ping")
 	assert.False(t, found)
 	assert.Equal(t, value, nil)
@@ -48,7 +98,16 @@ func TestGetWhenKeyIsNotFound(t *testing.T) {
 }
 
 func TestGetWhenKeyIsFound(t *testing.T) {
-	prattle, _ := NewPrattle("", 9000)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattle, _ := NewPrattle(client, 8080)
 	prattle.Set("ping", "pong")
 	value, found := prattle.Get("ping")
 	assert.True(t, found)
@@ -57,7 +116,16 @@ func TestGetWhenKeyIsFound(t *testing.T) {
 }
 
 func TestSetWhenKeyAlreadyExist(t *testing.T) {
-	prattle, _ := NewPrattle("", 9000)
+	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
+		require.NoError(t, err)
+		rw.Write(fileContents)
+		rw.WriteHeader(200)
+	}))
+
+	discovery.ConsulURL = consulServer.URL + "/"
+	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
+	prattle, _ := NewPrattle(client, 8080)
 	prattle.Set("ping", "pong")
 	value, _ := prattle.Get("ping")
 	assert.Equal(t, "pong", value)
@@ -65,26 +133,4 @@ func TestSetWhenKeyAlreadyExist(t *testing.T) {
 	newValue, _ := prattle.Get("ping")
 	assert.Equal(t, "pong2", newValue)
 	defer prattle.Shutdown()
-}
-
-// TODO: Refactor test - remove sleep
-func TestWhenNewNodeJoinsPrattleCluster(t *testing.T) {
-	prattleOne, errOne := NewPrattle("", 9000)
-	assert.Nil(t, errOne)
-	prattleTwo, errTwo := NewPrattle("", 9001)
-	assert.Nil(t, errTwo)
-	prattleThree, errThree := NewPrattle("", 9002)
-	assert.Nil(t, errThree)
-	defer prattleOne.Shutdown()
-	defer prattleTwo.Shutdown()
-	defer prattleThree.Shutdown()
-	assert.Equal(t, 1, prattleThree.members.NumMembers())
-	errFour := prattleTwo.JoinCluster("0.0.0.0:9000")
-	assert.Nil(t, errFour)
-	errFive := prattleThree.JoinCluster("0.0.0.0:9000")
-	assert.Nil(t, errFive)
-	time.Sleep(200 * time.Millisecond)
-	assert.Equal(t, 3, prattleOne.members.NumMembers())
-	assert.Equal(t, 3, prattleTwo.members.NumMembers())
-	assert.Equal(t, 3, prattleThree.members.NumMembers())
 }
