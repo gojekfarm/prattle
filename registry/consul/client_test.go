@@ -25,7 +25,7 @@ func TestThatItRegistersSuccessfullyWhenRegistrationResponseIsOK(t *testing.T) {
 		Port:               1000,
 		ConsulURL:          "http://localhost:8500/",
 	}
-	err := NewClient(consulURL, &http.Client{}).Register(discovery)
+	err := NewClient(consulURL, &http.Client{}, discovery).Register()
 	assert.NoError(t, err)
 }
 
@@ -43,7 +43,7 @@ func TestThatItDoesntRegisterTheServiceSuccessfullyWhenResponseIsNotOK(t *testin
 		Port:               1000,
 		ConsulURL:          "http://localhost:8500/",
 	}
-	err := NewClient(consulURL, &http.Client{}).Register(discovery)
+	err := NewClient(consulURL, &http.Client{}, discovery).Register()
 	assert.Error(t, err)
 }
 
@@ -54,8 +54,17 @@ func TestThatIfConsulGivesAllHealthyNodesInCluster(t *testing.T) {
 		responseWriter.Write(fileContents)
 		responseWriter.WriteHeader(200)
 	}))
+	discovery := config.Discovery{
+		TTL:                "10s",
+		HealthEndpoint:     "http://localhost:3000/",
+		HealthPingInterval: "10s",
+		Address:            "http://localhost",
+		Name:               "Test",
+		Port:               1000,
+		ConsulURL:          "http://localhost:8500/",
+	}
 	consulURL := testserver.URL + "/"
-	healthyNode, err := NewClient(consulURL, &http.Client{}).FetchHealthyNode()
+	healthyNode, err := NewClient(consulURL, &http.Client{}, discovery).FetchHealthyNode()
 	require.NoError(t, err)
 	assert.Equal(t, "127.0.0.1:8080", healthyNode)
 }
@@ -65,8 +74,17 @@ func TestThatItReturnsErrorWHenConsulGivesNoMembers(t *testing.T) {
 		responseWriter.Write([]byte("[]"))
 		responseWriter.WriteHeader(200)
 	}))
+	discovery := config.Discovery{
+		TTL:                "10s",
+		HealthEndpoint:     "http://localhost:3000/",
+		HealthPingInterval: "10s",
+		Address:            "http://localhost",
+		Name:               "Test",
+		Port:               1000,
+		ConsulURL:          "http://localhost:8500/",
+	}
 	consulURL := testserver.URL + "/"
-	healthyNode, err := NewClient(consulURL, &http.Client{}).FetchHealthyNode()
+	healthyNode, err := NewClient(consulURL, &http.Client{}, discovery).FetchHealthyNode()
 	require.Error(t, err)
 	assert.Equal(t, "", healthyNode)
 }

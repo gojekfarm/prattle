@@ -1,4 +1,0 @@
-package prattle
-
-func Register() {
-}

@@ -36,16 +36,17 @@ type Instance struct {
 type Client struct {
 	url        string
 	httpClient *http.Client
+	discovery  config.Discovery
 }
 
-func NewClient(url string, httpClient *http.Client) *Client {
-	return &Client{url: url, httpClient: httpClient}
+func NewClient(url string, httpClient *http.Client, discovery config.Discovery) *Client {
+	return &Client{url: url, httpClient: httpClient, discovery: discovery}
 }
 
-func (c *Client) Register(discovery config.Discovery) error {
+func (c *Client) Register() error {
 	var response *http.Response
-	check := Check{DeregisterCriticalServiceAfter: discovery.TTL, HTTP: discovery.HealthEndpoint, Interval: discovery.HealthPingInterval}
-	service := Service{ID: "----- todo -----", Address: discovery.Address, EnableTagOverride: false, Tags: []string{}, Name: discovery.Name, Port: discovery.Port, Check: check}
+	check := Check{DeregisterCriticalServiceAfter: c.discovery.TTL, HTTP: c.discovery.HealthEndpoint, Interval: c.discovery.HealthPingInterval}
+	service := Service{ID: "----- todo -----", Address: c.discovery.Address, EnableTagOverride: false, Tags: []string{}, Name: c.discovery.Name, Port: c.discovery.Port, Check: check}
 	serviceBytes, _ := json.Marshal(service)
 	request, err := http.NewRequest(http.MethodPut, c.serviceRegistrationURL(), bytes.NewBuffer(serviceBytes))
 	if err != nil {
@@ -62,6 +63,7 @@ func (c *Client) Register(discovery config.Discovery) error {
 	return nil
 }
 
+//TODO: Refactor this, remove business logic
 func (c *Client) FetchHealthyNode() (string, error) {
 	var instances []Instance
 	response, err := http.Get(c.healtyNodesUrl())
