@@ -69,7 +69,7 @@ func TestThatIfConsulGivesAllHealthyNodesInCluster(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:8080", healthyNode)
 }
 
-func TestThatItReturnsErrorWHenConsulGivesNoMembers(t *testing.T) {
+func TestThatItReturnsErrorWhenConsulGivesNoMembers(t *testing.T) {
 	testserver := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		responseWriter.Write([]byte("[]"))
 		responseWriter.WriteHeader(200)
@@ -85,6 +85,6 @@ func TestThatItReturnsErrorWHenConsulGivesNoMembers(t *testing.T) {
 	}
 	consulURL := testserver.URL + "/"
 	healthyNode, err := NewClient(consulURL, &http.Client{}, discovery).FetchHealthyNode()
-	require.Error(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "", healthyNode)
 }

@@ -75,13 +75,13 @@ func (c *Client) FetchHealthyNode() (string, error) {
 	if responseErr != nil {
 		return "", responseErr
 	}
-	//TODO: remove it as separate function
+	// TODO: remove it as separate function
 	errUnmarshal := json.Unmarshal(responseBodyBytes, &instances)
 	if errUnmarshal != nil {
 		return "", errUnmarshal
 	}
 	if len(instances) == 0 {
-		return "", errors.New("")
+		return "", nil
 	}
 	firstInstance := instances[0]
 	servicePort := strconv.FormatInt(int64(firstInstance.Service.Port), 10)

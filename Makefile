@@ -9,4 +9,4 @@ deps: clean
 	glide install
 
 test:
-	go test
+	go test ./...
