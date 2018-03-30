@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/memberlist"
 
-	"github.com/gojekfarm/prattle/registry"
+	"github.com/gojekfarm/prattle/config"
 )
 
 type Pair struct {
@@ -20,15 +20,12 @@ type Prattle struct {
 	database   *db
 }
 
-func NewPrattle(registry registry.Registry, port int) (*Prattle, error) {
-	var err error
-
-	member, err := registry.FetchHealthyNode()
+func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
+	member, err := consul.FetchHealthyNode()
 	if err != nil {
 		return nil, err
 	}
-
-	err = registry.Register()
+	err = consul.Register(discovery)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +33,6 @@ func NewPrattle(registry registry.Registry, port int) (*Prattle, error) {
 	b := &memberlist.TransmitLimitedQueue{
 		RetransmitMult: 3,
 	}
-
 	del := &delegate{
 		getBroadcasts: func(overhead, limit int) [][]byte {
 			return b.GetBroadcasts(overhead, limit)
@@ -48,19 +44,17 @@ func NewPrattle(registry registry.Registry, port int) (*Prattle, error) {
 		},
 	}
 
-	m, err := newMemberlist(port, member, del)
+	m, err := newMemberlist(rpcPort, member, del)
 	if err != nil {
 		return nil, err
 	}
-
 	b.NumNodes = func() int {
 		return m.NumMembers()
 	}
-
 	return &Prattle{
 		members:    m,
 		broadcasts: b,
-		database:   d,
+		database: d,
 	}, nil
 }
 
@@ -97,7 +91,7 @@ func (p *Prattle) Members() []string {
 }
 
 func (p *Prattle) Shutdown() {
-	p.members.Shutdown()
+	//p.members.Shutdown()
 }
 
 func (p *Prattle) JoinCluster(siblingAddr string) error {

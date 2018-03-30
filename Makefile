@@ -5,8 +5,14 @@ all: deps test
 clean:
 	go clean
 
+init:
+	docker-compose up -d
+
+nuke: clean
+	docker-compose down
+
 deps: clean
 	glide install
 
-test:
-	go test ./...
+test: nuke init
+	go test -v -cover ./...

@@ -1,16 +1,14 @@
 package prattle
 
 import (
-	"io/ioutil"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/gojekfarm/prattle/config"
-	"github.com/gojekfarm/prattle/registry/consul"
+	"github.com/stretchr/testify/assert"
 )
 
 var discovery = config.Discovery{
@@ -23,18 +21,37 @@ var discovery = config.Discovery{
 	ConsulURL:          "http://localhost:8500",
 }
 
-func TestPrattleWithMoreThanOneNode(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
+func TestNewPrattleWithSingleNode(t *testing.T) {
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.NoError(t, err)
+	testService := httptest.NewServer(
+		http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+			responseWriter.WriteHeader(200)
+		}))
+	testServiceAddr, ok := testService.Listener.Addr().(*net.TCPAddr)
+	assert.True(t, ok)
+	discovery := config.Discovery{
+		Name:               "test-prattle-service-02",
+		Address:            testServiceAddr.IP.String(),
+		Port:               testServiceAddr.Port,
+		HealthEndpoint:     fmt.Sprintf("%s/_healthz", testService.URL),
+		HealthPingInterval: "10s",
+		TTL:                "10s",
+	}
+	prattle, err := NewPrattle(consul, testServiceAddr.Port, discovery)
+	assert.Nil(t, err)
+	defer func() {
+		if prattle != nil {
+			prattle.Shutdown()
+		}
+	}()
+}
 
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattleOne, errOne := NewPrattle(client, 8080)
-	prattleTwo, errTwo := NewPrattle(client, 8081)
+func TestPrattleWithMoreThanOneNode(t *testing.T) {
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.NoError(t, err)
+	prattleOne, errOne := NewPrattle(consul, 8080, discovery)
+	prattleTwo, errTwo := NewPrattle(consul, 8081, discovery)
 	assert.Nil(t, errOne)
 	assert.Nil(t, errTwo)
 	assert.Equal(t, prattleOne.Members(), prattleTwo.Members())
@@ -48,16 +65,8 @@ func TestPrattleWithMoreThanOneNode(t *testing.T) {
 }
 
 func TestNewPrattleWhenMemberAddressIsNotInUse(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
-
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattle, err := NewPrattle(client, 8080)
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	prattle, err := NewPrattle(consul, 8080, discovery)
 	defer prattle.Shutdown()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, prattle.members.NumMembers())
@@ -66,33 +75,19 @@ func TestNewPrattleWhenMemberAddressIsNotInUse(t *testing.T) {
 }
 
 func TestPrattleWhenMemberAddressIsAlreadyInUse(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
-
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattle, errOne := NewPrattle(client, 8080)
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.Nil(t, err)
+	prattle, errOne := NewPrattle(consul, 8080, discovery)
 	defer prattle.Shutdown()
-	_, errTwo := NewPrattle(client, 8080)
+	_, errTwo := NewPrattle(consul, 8080, discovery)
 	assert.Nil(t, errOne)
 	assert.NotNil(t, errTwo)
 }
 
 func TestGetWhenKeyIsNotFound(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
-
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattle, _ := NewPrattle(client, 8080)
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.Nil(t, err)
+	prattle, _ := NewPrattle(consul, 8080, discovery)
 	value, found := prattle.Get("ping")
 	assert.False(t, found)
 	assert.Equal(t, value, nil)
@@ -100,16 +95,9 @@ func TestGetWhenKeyIsNotFound(t *testing.T) {
 }
 
 func TestGetWhenKeyIsFound(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
-
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattle, _ := NewPrattle(client, 8080)
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.Nil(t, err)
+	prattle, _ := NewPrattle(consul, 8080, discovery)
 	prattle.Set("ping", "pong")
 	value, found := prattle.Get("ping")
 	assert.True(t, found)
@@ -118,16 +106,9 @@ func TestGetWhenKeyIsFound(t *testing.T) {
 }
 
 func TestSetWhenKeyAlreadyExist(t *testing.T) {
-	consulServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fileContents, err := ioutil.ReadFile("./fixtures/healthy_nodes_response.json")
-		require.NoError(t, err)
-		rw.Write(fileContents)
-		rw.WriteHeader(200)
-	}))
-
-	discovery.ConsulURL = consulServer.URL + "/"
-	client := consul.NewClient(discovery.ConsulURL, &http.Client{}, discovery)
-	prattle, _ := NewPrattle(client, 8080)
+	consul, err := NewConsulClient("127.0.0.1:18500")
+	assert.Nil(t, err)
+	prattle, _ := NewPrattle(consul, 8080, discovery)
 	prattle.Set("ping", "pong")
 	value, _ := prattle.Get("ping")
 	assert.Equal(t, "pong", value)

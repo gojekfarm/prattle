@@ -10,7 +10,6 @@ import (
 
 	"github.com/gojekfarm/prattle"
 	"github.com/gojekfarm/prattle/config"
-	"github.com/gojekfarm/prattle/registry/consul"
 )
 
 var (
@@ -34,8 +33,11 @@ func main() {
 		Port:               *rpcPort,
 		ConsulURL:          "http://localhost:8500/",
 	}
-	consulClient := consul.NewClient("http://localhost:8500/", &http.Client{}, discovery)
-	prattle, err := prattle.NewPrattle(consulClient, *rpcPort)
+	consul, err := prattle.NewConsulClient("127.0.0.1:8500")
+	if err != nil {
+		log.Fatal(err)
+	}
+	prattle, err := prattle.NewPrattle(consul, *rpcPort, discovery)
 	if err != nil {
 		log.Fatal(err)
 	}

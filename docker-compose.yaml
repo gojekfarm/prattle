@@ -1,0 +1,16 @@
+version: '2.0'
+
+services:
+  test_prattle_consul:
+    image: consul:latest
+    hostname: "test-prattle-consul-01"
+    command: "consul agent -dev -client 0.0.0.0"
+    ports:
+      - "18400:8400"
+      - "18500:8500"
+      - "18600:8600"
+    networks:
+      - test_prattle_net
+
+networks:
+  test_prattle_net:
