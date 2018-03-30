@@ -5,7 +5,7 @@ all: deps test
 clean:
 	go clean
 
-deps:
+deps: clean
 	glide install
 
 test:
