@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strconv"
+
+	consul "github.com/hashicorp/consul/api"
 
 	"github.com/gojekfarm/prattle/config"
 )
@@ -35,19 +35,33 @@ type Instance struct {
 }
 
 type Client struct {
-	url        string
-	httpClient *http.Client
-	discovery  config.Discovery
+	url          string
+	httpClient   *http.Client
+	consulClient *consul.Client
+	discovery    config.Discovery
 }
 
 func NewClient(url string, httpClient *http.Client, discovery config.Discovery) *Client {
-	return &Client{url: url, httpClient: httpClient, discovery: discovery}
+	consulClient, _ := consul.NewClient(consul.DefaultConfig())
+	return &Client{
+		url:          url,
+		httpClient:   httpClient,
+		consulClient: consulClient,
+		discovery:    discovery,
+	}
 }
 
 func (c *Client) Register() error {
 	var response *http.Response
 	check := Check{DeregisterCriticalServiceAfter: c.discovery.TTL, HTTP: c.discovery.HealthEndpoint, Interval: c.discovery.HealthPingInterval}
-	service := Service{ID: "----- todo -----", Address: c.discovery.Address, EnableTagOverride: false, Tags: []string{}, Name: c.discovery.Name, Port: c.discovery.Port, Check: check}
+	service := Service{
+		ID:                c.discovery.Name,
+		Address:           c.discovery.Address,
+		EnableTagOverride: false,
+		Tags:              []string{},
+		Name:              c.discovery.Name,
+		Port:              c.discovery.Port,
+		Check:             check}
 	serviceBytes, _ := json.Marshal(service)
 	request, err := http.NewRequest(http.MethodPut, c.serviceRegistrationURL(), bytes.NewBuffer(serviceBytes))
 	if err != nil {
@@ -66,27 +80,14 @@ func (c *Client) Register() error {
 
 //TODO: Refactor this, remove business logic
 func (c *Client) FetchHealthyNode() (string, error) {
-	var instances []Instance
-	response, err := http.Get(c.healtyNodesUrl())
-	if err != nil {
-		return "", err
+	services, _ := c.consulClient.Agent().Services()
+	for _, agentService := range services {
+		return fmt.Sprintf(
+			"%s:%d",
+			agentService.Address,
+			agentService.Port), nil
 	}
-	responseBodyBytes, responseErr := ioutil.ReadAll(response.Body)
-	if responseErr != nil {
-		return "", responseErr
-	}
-	// TODO: remove it as separate function
-	errUnmarshal := json.Unmarshal(responseBodyBytes, &instances)
-	if errUnmarshal != nil {
-		return "", errUnmarshal
-	}
-	if len(instances) == 0 {
-		return "", nil
-	}
-	firstInstance := instances[0]
-	servicePort := strconv.FormatInt(int64(firstInstance.Service.Port), 10)
-	addr := firstInstance.Service.Address + ":" + servicePort
-	return addr, nil
+	return "", nil
 }
 
 func (c *Client) serviceRegistrationURL() string {
@@ -94,5 +95,5 @@ func (c *Client) serviceRegistrationURL() string {
 }
 
 func (c *Client) healtyNodesUrl() string {
-	return c.url + "v1/health/service/go-surge-app\\?passing"
+	return c.url + "v1/agent/services"
 }

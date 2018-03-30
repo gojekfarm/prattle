@@ -1,8 +1,12 @@
-hash: bee7db58eb9abd185ab24d2023ecedef51512e1d0e59a68240d66591334b4a73
-updated: 2018-03-30T11:06:16.70665+05:30
+hash: 20f0cfd8205c40c1b3e260fa5764d44bb8ee1fa908b7e63ef20029c797d8a542
+updated: 2018-03-30T14:29:23.565251+05:30
 imports:
 - name: github.com/armon/go-metrics
   version: 0a12dc6f6b9da6da644031a1b9b5a85478c5ee27
+- name: github.com/hashicorp/consul
+  version: 9a494b5fb9c86180a5702e29c485df1507a47198
+  subpackages:
+  - api
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-immutable-radix
