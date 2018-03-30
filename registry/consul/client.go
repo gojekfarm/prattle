@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 	"strconv"
-	"github.com/divya2661/prattle/config"
+
+	"github.com/gojekfarm/prattle/config"
 )
 
 // consul.Client makes it easy to communicate with the consul API

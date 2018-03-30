@@ -1,24 +1,12 @@
-.PHONY: build
-.SILENT: run
+SHELL := /usr/bin/env bash -e
 
-SVC_ROOT = `pwd`
-BINARY   = gossipdb
-PACKAGE  = github.com/SinisterLight/gossipdb
+all: deps test
 
-all: init deps test
-
-init:
-	mkdir -p build
+clean:
+	go clean
 
 deps:
 	glide install
 
 test:
 	go test
-
-clean:
-	if [ -f build/${BINARY} ] ; then rm build/${BINARY} ; fi
-
-
-build:
-	go build -v -o ${SVC_ROOT}/build/${BINARY} ${SVC_ROOT}/gossipdb.go

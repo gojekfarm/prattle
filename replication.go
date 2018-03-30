@@ -2,11 +2,12 @@ package prattle
 
 import (
 	"fmt"
-	"github.com/hashicorp/memberlist"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/memberlist"
 )
 
 type delegate struct {

@@ -1,9 +1,10 @@
 package prattle
 
 import (
+	"testing"
+
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewDb(t *testing.T) {

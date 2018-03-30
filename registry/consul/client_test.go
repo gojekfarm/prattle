@@ -1,14 +1,14 @@
 package consul
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gojekfarm/prattle/config"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"github.com/stretchr/testify/require"
-	"github.com/divya2661/prattle/config"
 )
 
 func TestThatItRegistersSuccessfullyWhenRegistrationResponseIsOK(t *testing.T) {

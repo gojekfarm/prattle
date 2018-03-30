@@ -1,14 +1,16 @@
 package prattle
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
-	"net/http/httptest"
-	"net/http"
-	"github.com/divya2661/prattle/registry/consul"
-	"github.com/divya2661/prattle/config"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/gojekfarm/prattle/config"
+	"github.com/gojekfarm/prattle/registry/consul"
 )
 
 var discovery = config.Discovery{

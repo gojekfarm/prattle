@@ -3,9 +3,11 @@ package prattle
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/memberlist"
 	"log"
-	"github.com/divya2661/prattle/registry"
+
+	"github.com/hashicorp/memberlist"
+
+	"github.com/gojekfarm/prattle/registry"
 )
 
 type Pair struct {
@@ -96,7 +98,7 @@ func (p *Prattle) Shutdown() {
 
 func (p *Prattle) JoinCluster(siblingAddr string) error {
 	_, err := p.members.Join([]string{siblingAddr})
-	if (err != nil) {
+	if err != nil {
 		log.Fatal("Could not join the cluster with sibling", siblingAddr)
 		return err
 	}
