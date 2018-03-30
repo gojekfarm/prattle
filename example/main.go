@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gojekfarm/prattle"
 	"github.com/gojekfarm/prattle/config"
@@ -15,52 +14,20 @@ import (
 )
 
 var (
-	// TODO: find out if they can be made local.
-	key   string
-	value string
-
-	rpcPort  = flag.Int("rpc-port", 0, "RPC port")
-	httpPort = flag.Int("http-port", 0, "http port")
+	rpcPort  = flag.Int("rpc-port", 0, "RPC Port")
+	httpPort = flag.Int("http-port", 0, "HTTP Port")
 )
 
-type keyValue struct {
+type entry struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
 }
 
-func addKeyHandler(p *prattle.Prattle) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Println(err)
-		}
-		var data keyValue
-		json.Unmarshal(body, &data)
-		p.Set(data.Key, data.Value)
-		json.NewEncoder(w).Encode(data)
-	}
-}
-
-func clusterHealthHandler(p *prattle.Prattle) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(p.Members())
-	}
-}
-
-func getValueHandler(p *prattle.Prattle) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		val, _ := p.Get(r.FormValue("key"))
-		json.NewEncoder(w).Encode(val)
-	}
-}
-
 func main() {
 	flag.Parse()
-
 	discovery := config.Discovery{
 		TTL:                "10s",
-		HealthEndpoint:     "http://localhost:" + strconv.FormatInt(int64(*httpPort), 10),
+		HealthEndpoint:     fmt.Sprintf("http://localhost:%d/_health", *httpPort),
 		HealthPingInterval: "10s",
 		Address:            "localhost",
 		Name:               "Test",
@@ -72,9 +39,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.HandleFunc("/_health", clusterHealthHandler(prattle))
-	http.HandleFunc("/get", getValueHandler(prattle))
-	http.HandleFunc("/set", addKeyHandler(prattle))
+	http.HandleFunc("/_health", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(prattle.Members())
+	})
+	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {
+		val, _ := prattle.Get(r.FormValue("key"))
+		json.NewEncoder(w).Encode(val)
+	})
+	http.HandleFunc("/set", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		var data entry
+		json.Unmarshal(body, &data)
+		prattle.Set(data.Key, data.Value)
+		json.NewEncoder(w).Encode(data)
+	})
 	fmt.Printf("Listening on :%d\n", *httpPort)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), nil); err != nil {
 		fmt.Println(err)

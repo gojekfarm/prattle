@@ -2,7 +2,6 @@ package prattle
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/hashicorp/memberlist"
@@ -70,24 +69,29 @@ func (p *Prattle) Get(k string) (interface{}, bool) {
 	return value, found
 }
 
-func (p *Prattle) Set(key string, value interface{}) {
+func (p *Prattle) Set(key string, value interface{}) error {
 	p.database.Save(key, value)
-	pair := &Pair{Key: key, Value: value}
+	pair := &Pair{
+		Key:   key,
+		Value: value,
+	}
 	message, err := json.Marshal(pair)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-
-	p.broadcasts.QueueBroadcast(&broadcast{
-		msg:    message,
-		notify: nil,
-	})
+	go func() {
+		p.broadcasts.QueueBroadcast(&broadcast{
+			msg:    message,
+			notify: nil,
+		})
+	}()
+	return nil
 }
 
 func (p *Prattle) Members() []string {
-	a := []string{}
+	var a []string
 	for _, m := range p.members.Members() {
-		a = append(a, string(m.Addr))
+		a = append(a, m.Addr.String())
 	}
 	return a
 }
