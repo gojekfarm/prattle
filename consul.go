@@ -2,10 +2,12 @@ package prattle
 
 import (
 	"errors"
-
-	consulAPI "github.com/hashicorp/consul/api"
+	"fmt"
+	"log"
 
 	"github.com/gojekfarm/prattle/config"
+	consulAPI "github.com/hashicorp/consul/api"
+	"github.com/satori/go.uuid"
 )
 
 type Client struct {
@@ -26,30 +28,36 @@ func NewConsulClient(consulAddress string) (*Client, error) {
 	}, nil
 }
 
-func (client *Client) Register(discovery config.Discovery) error {
+func (client *Client) Register(discovery config.Discovery) (string, error) {
 	check := consulAPI.AgentServiceCheck{
 		HTTP:                           discovery.HealthEndpoint,
 		Interval:                       discovery.HealthPingInterval,
 		DeregisterCriticalServiceAfter: discovery.TTL,
 	}
+	serviceId := uuid.NewV4().String()
 	serviceRegistration := consulAPI.AgentServiceRegistration{
-		ID:                discovery.Name,
+		ID:                serviceId,
 		Address:           discovery.Address,
 		EnableTagOverride: false,
 		Tags:              []string{},
 		Name:              discovery.Name,
 		Check:             &check,
 	}
-	return client.consulClient.Agent().ServiceRegister(&serviceRegistration)
+	return serviceId, client.consulClient.Agent().ServiceRegister(&serviceRegistration)
 }
 
 func (client *Client) FetchHealthyNode() (string, error) {
-	services, _ := client.consulClient.Agent().Services()
+	queryOptions := &consulAPI.QueryOptions{}
+	services, _, err := client.consulClient.Health().Service("test-service-01", "", true, queryOptions)
+	if err != nil {
+		log.Fatal("Can not fetch service")
+	}
 	if len(services) == 0 {
 		return "", nil
 	}
 	for _, agentService := range services {
-		return agentService.Address, nil
+		fmt.Println("member: " + agentService.Service.Address)
+		return agentService.Service.Address, nil
 	}
 	return "", errors.New("no healthy node found")
 }
