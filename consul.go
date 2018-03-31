@@ -2,7 +2,6 @@ package prattle
 
 import (
 	"errors"
-	"fmt"
 
 	consulAPI "github.com/hashicorp/consul/api"
 
@@ -39,7 +38,6 @@ func (client *Client) Register(discovery config.Discovery) error {
 		EnableTagOverride: false,
 		Tags:              []string{},
 		Name:              discovery.Name,
-		Port:              discovery.Port,
 		Check:             &check,
 	}
 	return client.consulClient.Agent().ServiceRegister(&serviceRegistration)
@@ -51,10 +49,7 @@ func (client *Client) FetchHealthyNode() (string, error) {
 		return "", nil
 	}
 	for _, agentService := range services {
-		return fmt.Sprintf(
-			"%s:%d",
-			agentService.Address,
-			agentService.Port), nil
+		return agentService.Address, nil
 	}
 	return "", errors.New("no healthy node found")
 }

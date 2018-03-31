@@ -22,8 +22,7 @@ func TestRegisterWhenANodeIsHealthy(t *testing.T) {
 	assert.True(t, ok)
 	err = client.Register(config.Discovery{
 		Name:               "test-service-01",
-		Address:            testServiceAddr.IP.String(),
-		Port:               testServiceAddr.Port,
+		Address:            testServiceAddr.String(),
 		HealthEndpoint:     fmt.Sprintf("%s/_healthz", testService.URL),
 		HealthPingInterval: "10s",
 		TTL:                "10s",
@@ -46,7 +45,6 @@ func TestRegisterWhenANodeIsUnhealthy(t *testing.T) {
 	err = client.Register(config.Discovery{
 		Name:               "test-service-02",
 		Address:            testServiceAddr.IP.String(),
-		Port:               testServiceAddr.Port,
 		HealthEndpoint:     fmt.Sprintf("%s/_healthz", testService.URL),
 		HealthPingInterval: "10s",
 		TTL:                "10s",
