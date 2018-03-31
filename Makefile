@@ -12,7 +12,7 @@ nuke: clean
 	docker-compose down
 
 deps: clean
-	glide install
+	dep ensure
 
 test: nuke init
 	go test -v -cover ./...

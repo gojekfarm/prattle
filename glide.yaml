@@ -1,9 +1,0 @@
-package: github.com/gojekfarm/prattle
-import:
-- package: github.com/patrickmn/go-cache
-- package: github.com/hashicorp/memberlist
-- package: github.com/stretchr/testify
-- package: github.com/hashicorp/consul
-  version: ^1.0.6
-  subpackages:
-  - api
