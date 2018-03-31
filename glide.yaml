@@ -7,3 +7,5 @@ import:
   version: ^1.0.6
   subpackages:
   - api
+- package: github.com/satori/go.uuid
+  version: ^1.2.0

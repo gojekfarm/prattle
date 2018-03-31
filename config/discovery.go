@@ -6,6 +6,5 @@ type Discovery struct {
 	HealthPingInterval string
 	Address            string
 	Name               string
-	Port               int
-	ConsulURL          string
+	ConsulHost         string
 }

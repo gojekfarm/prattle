@@ -2,6 +2,7 @@ package prattle
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/hashicorp/memberlist"
@@ -25,7 +26,8 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 	if err != nil {
 		return nil, err
 	}
-	err = consul.Register(discovery)
+	fmt.Println("member: " + member)
+	_, err = consul.Register(discovery)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +93,7 @@ func (p *Prattle) Members() []string {
 }
 
 func (p *Prattle) Shutdown() {
-	//p.members.Shutdown()
+	p.members.Shutdown()
 }
 
 func (p *Prattle) JoinCluster(siblingAddr string) error {
