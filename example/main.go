@@ -30,7 +30,6 @@ func main() {
 		HealthPingInterval: "10s",
 		Address:            "localhost",
 		Name:               "Test",
-		Port:               *rpcPort,
 		ConsulHost:         "http://localhost:8500/",
 	}
 	consul, err := prattle.NewConsulClient("127.0.0.1:8500")
