@@ -22,7 +22,7 @@ type Prattle struct {
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
-	member, err := consul.FetchHealthyNode()
+	member, err := consul.FetchHealthyNode(discovery.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 	return &Prattle{
 		members:    m,
 		broadcasts: b,
-		database: d,
+		database:   d,
 	}, nil
 }
 

@@ -46,9 +46,9 @@ func (client *Client) Register(discovery config.Discovery) (string, error) {
 	return serviceId, client.consulClient.Agent().ServiceRegister(&serviceRegistration)
 }
 
-func (client *Client) FetchHealthyNode() (string, error) {
+func (client *Client) FetchHealthyNode(serviceName string) (string, error) {
 	queryOptions := &consulAPI.QueryOptions{}
-	services, _, err := client.consulClient.Health().Service("test-service-01", "", true, queryOptions)
+	services, _, err := client.consulClient.Health().Service(serviceName, "", true, queryOptions)
 	if err != nil {
 		log.Fatal("Can not fetch service")
 	}

@@ -28,7 +28,7 @@ func main() {
 		TTL:                "10s",
 		HealthEndpoint:     fmt.Sprintf("http://localhost:%d/_health", *httpPort),
 		HealthPingInterval: "10s",
-		Address:            "localhost",
+		Address:            fmt.Sprintf("localhost:%d", *rpcPort),
 		Name:               "Test",
 		ConsulHost:         "http://localhost:8500/",
 	}
