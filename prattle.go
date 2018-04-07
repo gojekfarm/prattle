@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/hashicorp/memberlist"
 
+	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/gojekfarm/prattle/config"
 )
 
@@ -16,12 +18,14 @@ type Pair struct {
 }
 
 type Prattle struct {
-	members    *memberlist.Memberlist
-	broadcasts *memberlist.TransmitLimitedQueue
-	database   *db
+	members      *memberlist.Memberlist
+	broadcasts   *memberlist.TransmitLimitedQueue
+	database     *db
+	statsDClient statsd.Statter
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
+	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8125", "", 5*time.Millisecond, 10)
 	member, err := consul.FetchHealthyNode(discovery.Name)
 	if err != nil {
 		return nil, err
@@ -42,7 +46,10 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		notifyMsg: func(b []byte) {
 			pair := &Pair{}
 			json.Unmarshal(b, pair)
-			d.Save(pair.Key, pair.Value)
+			if _, ok := d.Get(pair.Key); ok == false {
+				statsDClient.Inc("bla", int64(1), float32(1))
+				d.Save(pair.Key, pair.Value)
+			}
 		},
 	}
 

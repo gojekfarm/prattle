@@ -1,8 +1,12 @@
-hash: c8e83786e80bfd77d8e59c3fd6a5703054a9008bed0382b79db5910bc4610f6b
-updated: 2018-03-31T14:47:57.153755+05:30
+hash: 93a4a5bebe6a211a67b73c3ff7a88a83352bdf11767c70148c73b15286076eb3
+updated: 2018-04-07T16:14:54.408259477+05:30
 imports:
 - name: github.com/armon/go-metrics
   version: 0a12dc6f6b9da6da644031a1b9b5a85478c5ee27
+- name: github.com/cactus/go-statsd-client
+  version: 138b925ccdf617776955904ba7759fce64406cec
+  subpackages:
+  - statsd
 - name: github.com/hashicorp/consul
   version: 9a494b5fb9c86180a5702e29c485df1507a47198
   subpackages:
@@ -38,13 +42,13 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/patrickmn/go-cache
-  version: a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0
+  version: 1881a9bccb818787f68c52bfba648c6cf34c34fa
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sean-/seed
   version: e2103e2c35297fb7e17febb81e49b312087a2372
 - name: github.com/stretchr/testify
-  version: b91bfb9ebec76498946beb6af7c0230c7cc7ba6c
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
   - require

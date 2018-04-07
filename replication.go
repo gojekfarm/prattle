@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/hashicorp/memberlist"
 )
 
 type delegate struct {
+	StatsDClient  statsd.Statter
 	notifyMsg     func([]byte)
 	getBroadcasts func(int, int) [][]byte
 }
