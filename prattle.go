@@ -12,20 +12,23 @@ import (
 	"github.com/gojekfarm/prattle/config"
 )
 
-type Pair struct {
+type BroadcastMessage struct {
 	Key   string
 	Value interface{}
 }
 
 type Prattle struct {
-	members      *memberlist.Memberlist
-	broadcasts   *memberlist.TransmitLimitedQueue
-	database     *db
-	statsDClient statsd.Statter
+	members          *memberlist.Memberlist
+	broadcasts       *memberlist.TransmitLimitedQueue
+	database         *db
+	statsDClient     statsd.Statter
+	broadcastChannel chan BroadcastMessage
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
-	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8125", "", 5*time.Millisecond, 10)
+	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8127", "", 5*time.Millisecond, 10)
+	broadcastChannel := make(chan BroadcastMessage, 10000)
+
 	member, err := consul.FetchHealthyNode(discovery.Name)
 	if err != nil {
 		return nil, err
@@ -36,17 +39,19 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		return nil, err
 	}
 	d := newDb()
-	b := &memberlist.TransmitLimitedQueue{
+	transmitLimitedQueue := &memberlist.TransmitLimitedQueue{
 		RetransmitMult: 3,
 	}
+
 	del := &delegate{
 		getBroadcasts: func(overhead, limit int) [][]byte {
-			return b.GetBroadcasts(overhead, limit)
+			return transmitLimitedQueue.GetBroadcasts(overhead, limit)
 		},
 		notifyMsg: func(b []byte) {
-			pair := &Pair{}
+			pair := &BroadcastMessage{}
 			json.Unmarshal(b, pair)
 			if _, ok := d.Get(pair.Key); ok == false {
+				fmt.Println("saving")
 				statsDClient.Inc("bla", int64(1), float32(1))
 				d.Save(pair.Key, pair.Value)
 			}
@@ -57,14 +62,30 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 	if err != nil {
 		return nil, err
 	}
-	b.NumNodes = func() int {
-		return m.NumMembers()
-	}
+	transmitLimitedQueue.NumNodes = func() int { return m.NumMembers() }
+	startBroadcastWorker(broadcastChannel, transmitLimitedQueue)
 	return &Prattle{
-		members:    m,
-		broadcasts: b,
-		database:   d,
+		members:          m,
+		broadcasts:       transmitLimitedQueue,
+		database:         d,
+		statsDClient:     statsDClient,
+		broadcastChannel: broadcastChannel,
 	}, nil
+}
+
+func startBroadcastWorker(broadcastChannel chan BroadcastMessage, transmitLimitedQueue *memberlist.TransmitLimitedQueue) {
+	go func(transmitLimitedQueue *memberlist.TransmitLimitedQueue) {
+		for {
+			broadcastMessage := <-broadcastChannel
+			message, err := json.Marshal(broadcastMessage)
+			if err == nil {
+				transmitLimitedQueue.QueueBroadcast(&broadcast{
+					msg:    message,
+					notify: nil,
+				})
+			}
+		}
+	}(transmitLimitedQueue)
 }
 
 func (p *Prattle) Get(k string) (interface{}, bool) {
@@ -74,20 +95,11 @@ func (p *Prattle) Get(k string) (interface{}, bool) {
 
 func (p *Prattle) Set(key string, value interface{}) error {
 	p.database.Save(key, value)
-	pair := &Pair{
+	p.statsDClient.Inc("source", int64(1), float32(1))
+	p.broadcastChannel <- BroadcastMessage{
 		Key:   key,
 		Value: value,
 	}
-	message, err := json.Marshal(pair)
-	if err != nil {
-		return err
-	}
-	go func() {
-		p.broadcasts.QueueBroadcast(&broadcast{
-			msg:    message,
-			notify: nil,
-		})
-	}()
 	return nil
 }
 
