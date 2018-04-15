@@ -26,6 +26,7 @@ type Prattle struct {
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
+	var serviceID string
 	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8127", "", 5*time.Millisecond, 10)
 	broadcastChannel := make(chan BroadcastMessage, 10000)
 
@@ -34,7 +35,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		return nil, err
 	}
 	fmt.Println("member: " + member)
-	_, err = consul.Register(discovery)
+	serviceID, err = consul.Register(discovery)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +64,8 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		return nil, err
 	}
 	transmitLimitedQueue.NumNodes = func() int { return m.NumMembers() }
+	ticker := time.NewTicker(time.Second)
+	go startPingWorker(ticker, serviceID, consul);
 	startBroadcastWorker(broadcastChannel, transmitLimitedQueue)
 	return &Prattle{
 		members:          m,
@@ -71,6 +74,12 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		statsDClient:     statsDClient,
 		broadcastChannel: broadcastChannel,
 	}, nil
+}
+func startPingWorker(ticker *time.Ticker, serviceID string, consul *Client) {
+	checkID := "service:" + serviceID
+	for range ticker.C {
+		consul.Ping(checkID)
+	}
 }
 
 func startBroadcastWorker(broadcastChannel chan BroadcastMessage, transmitLimitedQueue *memberlist.TransmitLimitedQueue) {
@@ -113,6 +122,7 @@ func (p *Prattle) Members() []string {
 
 func (p *Prattle) Shutdown() {
 	p.members.Shutdown()
+	close(p.broadcastChannel)
 }
 
 func (p *Prattle) JoinCluster(siblingAddr string) error {

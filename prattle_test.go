@@ -1,7 +1,6 @@
 package prattle
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,8 +22,6 @@ func TestNewPrattleWithSingleNode(t *testing.T) {
 	discovery := config.Discovery{
 		Name:               "test-prattle-service-02",
 		Address:            testServiceAddress,
-		HealthEndpoint:     fmt.Sprintf("%s/_healthz", testService.URL),
-		HealthPingInterval: "10s",
 		TTL:                "10s",
 	}
 	prattle, err := NewPrattle(consul, 9000, discovery)
@@ -35,26 +32,14 @@ func TestNewPrattleWithSingleNode(t *testing.T) {
 func TestPrattleWithMoreThanOneNode(t *testing.T) {
 	consul, err := NewConsulClient("127.0.0.1:8500")
 	require.NoError(t, err)
-	testServiceOne := httptest.NewServer(
-		http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			responseWriter.WriteHeader(200)
-		}))
 	discoveryOne := config.Discovery{
 		Name:               "test-service-01",
 		Address:            "0.0.0.0:9000",
-		HealthEndpoint:     testServiceOne.URL,
-		HealthPingInterval: "1s",
 		TTL:                "10s",
 	}
-	testServiceTwo := httptest.NewServer(
-		http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			responseWriter.WriteHeader(200)
-		}))
 	discoveryTwo := config.Discovery{
 		Name:               "test-service-01",
 		Address:            "0.0.0.0:9001",
-		HealthEndpoint:     testServiceTwo.URL,
-		HealthPingInterval: "1s",
 		TTL:                "10s",
 	}
 	prattleOne, errOne := NewPrattle(consul, 9000, discoveryOne)

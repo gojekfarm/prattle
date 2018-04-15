@@ -30,9 +30,8 @@ func NewConsulClient(consulAddress string) (*Client, error) {
 
 func (client *Client) Register(discovery config.Discovery) (string, error) {
 	check := consulAPI.AgentServiceCheck{
-		HTTP:                           discovery.HealthEndpoint,
-		Interval:                       discovery.HealthPingInterval,
 		DeregisterCriticalServiceAfter: discovery.TTL,
+		TTL:                            discovery.TTL,
 	}
 	serviceId := uuid.NewV4().String()
 	serviceRegistration := consulAPI.AgentServiceRegistration{
@@ -50,6 +49,7 @@ func (client *Client) FetchHealthyNode(serviceName string) (string, error) {
 	queryOptions := &consulAPI.QueryOptions{}
 	services, _, err := client.consulClient.Health().Service(serviceName, "", true, queryOptions)
 	if err != nil {
+		log.Println(err)
 		log.Fatal("Can not fetch service")
 	}
 	if len(services) == 0 {
@@ -60,4 +60,7 @@ func (client *Client) FetchHealthyNode(serviceName string) (string, error) {
 		return agentService.Service.Address, nil
 	}
 	return "", errors.New("no healthy node found")
+}
+func (client *Client) Ping(checkID string) error {
+	return client.consulClient.Agent().UpdateTTL(checkID, "", consulAPI.HealthPassing)
 }

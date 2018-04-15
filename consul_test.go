@@ -1,8 +1,6 @@
 package prattle
 
 import (
-	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +9,8 @@ import (
 	"github.com/gojekfarm/prattle/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"fmt"
+	"net"
 )
 
 //:TODO Refactor and remove time.sleep
@@ -24,19 +24,20 @@ func TestRegisterWhenANodeIsHealthy(t *testing.T) {
 	testServiceAddr := testService.Listener.Addr().String()
 	testServiceName := "test-service-01"
 	discovery := config.Discovery{
-		Name:               testServiceName,
-		Address:            testServiceAddr,
-		HealthEndpoint:     testService.URL,
-		HealthPingInterval: "1s",
-		TTL:                "1s",
+		Name:    testServiceName,
+		Address: testServiceAddr,
+		TTL:     "1s",
 	}
-	id, regErr := client.Register(discovery)
+	serviceID, regErr := client.Register(discovery)
+
 	require.NoError(t, regErr)
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
+	pingError := client.Ping("service:" + serviceID)
+	require.NoError(t, pingError)
 	healthyServiceAddr, err := client.FetchHealthyNode(testServiceName)
 	assert.NoError(t, err)
 	assert.Equal(t, testServiceAddr, healthyServiceAddr)
-	deregErr := client.consulClient.Agent().ServiceDeregister(id)
+	deregErr := client.consulClient.Agent().ServiceDeregister(serviceID)
 	require.NoError(t, deregErr)
 }
 
@@ -50,20 +51,18 @@ func TestRegisterWhenANodeIsUnhealthy(t *testing.T) {
 	testServiceAddr := testService.Listener.Addr().String()
 	testServiceName := "test-service-02"
 	service := config.Discovery{
-		Name:               testServiceName,
-		Address:            testServiceAddr,
-		HealthEndpoint:     fmt.Sprintf("%s/_healthz", testService.URL),
-		HealthPingInterval: "1s",
-		TTL:                "1s",
+		Name:    testServiceName,
+		Address: testServiceAddr,
+		TTL:     "1s",
 	}
-	id, regErr := client.Register(service)
+	serviceID, regErr := client.Register(service)
 	assert.NoError(t, regErr)
 	time.Sleep(1 * time.Second)
 	member, err := client.FetchHealthyNode(testServiceName)
 	fmt.Println(member)
 	assert.Equal(t, "", member)
 	assert.NoError(t, err)
-	deregErr := client.consulClient.Agent().ServiceDeregister(id)
+	deregErr := client.consulClient.Agent().ServiceDeregister(serviceID)
 	require.NoError(t, deregErr)
 }
 
@@ -83,24 +82,22 @@ func TestTwoServicesRegistrationWhenOneIsUnhealthy(t *testing.T) {
 
 	testServiceNameOne := "test-service-01"
 	serviceOne := config.Discovery{
-		Name:               testServiceNameOne,
-		Address:            testServiceAddrOne,
-		HealthEndpoint:     "http://" + testServiceAddrOne + "/ping",
-		HealthPingInterval: "1s",
-		TTL:                "1s",
+		Name:    testServiceNameOne,
+		Address: testServiceAddrOne,
+		TTL:     "1s",
 	}
 	testServiceNameTwo := "test-service-02"
 	serviceTwo := config.Discovery{
-		Name:               testServiceNameTwo,
-		Address:            testServiceAddrTwo,
-		HealthEndpoint:     "http://" + testServiceAddrTwo + "/ping",
-		HealthPingInterval: "1s",
-		TTL:                "1s",
+		Name:    testServiceNameTwo,
+		Address: testServiceAddrTwo,
+		TTL:     "1s",
 	}
 	fmt.Println("health: " + testServiceAddrTwo)
 	idOne, regErrOne := client.Register(serviceOne)
 	idTwo, regErrTwo := client.Register(serviceTwo)
-	time.Sleep(1 * time.Second)
+	pingError := client.Ping("service:" + idOne)
+	require.NoError(t, pingError)
+	time.Sleep(500 * time.Millisecond)
 	assert.NoError(t, regErrOne)
 	assert.NoError(t, regErrTwo)
 	member, err := client.FetchHealthyNode(testServiceNameOne)
