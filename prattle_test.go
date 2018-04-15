@@ -43,9 +43,9 @@ func TestPrattleWithMoreThanOneNode(t *testing.T) {
 		TTL:                "10s",
 	}
 	prattleOne, errOne := NewPrattle(consul, 9000, discoveryOne)
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	prattleTwo, errTwo := NewPrattle(consul, 9001, discoveryTwo)
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	require.NoError(t, errOne)
 	require.NoError(t, errTwo)
 	defer prattleOne.Shutdown()

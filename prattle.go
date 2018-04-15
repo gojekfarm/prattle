@@ -23,6 +23,7 @@ type Prattle struct {
 	database         *db
 	statsDClient     statsd.Statter
 	broadcastChannel chan BroadcastMessage
+	ticker           *time.Ticker
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
@@ -73,6 +74,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		database:         d,
 		statsDClient:     statsDClient,
 		broadcastChannel: broadcastChannel,
+		ticker:           ticker,
 	}, nil
 }
 func startPingWorker(ticker *time.Ticker, serviceID string, consul *Client) {
@@ -121,8 +123,9 @@ func (p *Prattle) Members() []string {
 }
 
 func (p *Prattle) Shutdown() {
-	p.members.Shutdown()
+	p.ticker.Stop()
 	close(p.broadcastChannel)
+	p.members.Shutdown()
 }
 
 func (p *Prattle) JoinCluster(siblingAddr string) error {
