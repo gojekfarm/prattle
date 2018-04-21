@@ -110,7 +110,7 @@ func (p *Prattle) Get(k string) (interface{}, bool) {
 
 func (p *Prattle) Set(key string, value interface{}) error {
 	p.database.Save(key, value)
-	p.statsDClient.Inc(hostname+"_source", int64(1), float32(1))
+	p.statsDClient.Inc(p.hostname+"_source", int64(1), float32(1))
 	p.broadcastChannel <- BroadcastMessage{
 		Key:   key,
 		Value: value,
