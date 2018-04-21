@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/hashicorp/memberlist"
@@ -24,11 +25,13 @@ type Prattle struct {
 	statsDClient     statsd.Statter
 	broadcastChannel chan BroadcastMessage
 	ticker           *time.Ticker
+	hostname         string
 }
 
 func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Prattle, error) {
+	hostname, _ := os.Hostname()
 	var serviceID string
-	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8127", "", 5*time.Millisecond, 10)
+	statsDClient, _ := statsd.NewBufferedClient("127.0.0.1:8125", "", 5*time.Millisecond, 10)
 	broadcastChannel := make(chan BroadcastMessage, 10000)
 
 	member, err := consul.FetchHealthyNode(discovery.Name)
@@ -54,7 +57,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 			json.Unmarshal(b, pair)
 			if _, ok := d.Get(pair.Key); ok == false {
 				fmt.Println("saving")
-				statsDClient.Inc("bla", int64(1), float32(1))
+				statsDClient.Inc(hostname+"_dest", int64(1), float32(1))
 				d.Save(pair.Key, pair.Value)
 			}
 		},
@@ -66,7 +69,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 	}
 	transmitLimitedQueue.NumNodes = func() int { return m.NumMembers() }
 	ticker := time.NewTicker(time.Second)
-	go startPingWorker(ticker, serviceID, consul);
+	go startPingWorker(ticker, serviceID, consul)
 	startBroadcastWorker(broadcastChannel, transmitLimitedQueue)
 	return &Prattle{
 		members:          m,
@@ -75,6 +78,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		statsDClient:     statsDClient,
 		broadcastChannel: broadcastChannel,
 		ticker:           ticker,
+		hostname:         hostname,
 	}, nil
 }
 func startPingWorker(ticker *time.Ticker, serviceID string, consul *Client) {
@@ -106,7 +110,7 @@ func (p *Prattle) Get(k string) (interface{}, bool) {
 
 func (p *Prattle) Set(key string, value interface{}) error {
 	p.database.Save(key, value)
-	p.statsDClient.Inc("source", int64(1), float32(1))
+	p.statsDClient.Inc(hostname+"_source", int64(1), float32(1))
 	p.broadcastChannel <- BroadcastMessage{
 		Key:   key,
 		Value: value,
