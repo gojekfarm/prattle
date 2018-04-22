@@ -51,8 +51,8 @@ func TestPrattleWithMoreThanOneNode(t *testing.T) {
 	defer prattleOne.Shutdown()
 	defer prattleTwo.Shutdown()
 	assert.Equal(t, prattleOne.Members(), prattleTwo.Members())
-	assert.Equal(t, int(prattleOne.members.LocalNode().Port), 9000)
-	assert.Equal(t, int(prattleTwo.members.LocalNode().Port), 9001)
-	assert.Equal(t, 2, prattleOne.members.NumMembers())
+	assert.Equal(t, int(prattleOne.memberlist.LocalNode().Port), 9000)
+	assert.Equal(t, int(prattleTwo.memberlist.LocalNode().Port), 9001)
+	assert.Equal(t, 2, prattleOne.memberlist.NumMembers())
 	assert.Equal(t, 2, prattleOne.broadcasts.NumNodes())
 }
