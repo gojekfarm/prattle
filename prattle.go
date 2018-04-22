@@ -66,10 +66,9 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		notifyMsg: func(b []byte) {
 			pair := &BroadcastMessage{}
 			json.Unmarshal(b, pair)
-			if _, ok := d.Get(pair.Key); ok == false {
-				statsDClient.Inc(hostname+postfixDest, int64(1), float32(1))
-				d.Save(pair.Key, pair.Value)
-			}
+			fmt.Println(d.Get(pair.Key))
+			statsDClient.Inc(hostname+postfixDest, int64(1), float32(1))
+			d.Save(pair.Key, pair.Value)
 		},
 	}
 
@@ -134,7 +133,7 @@ func (p *Prattle) SetViaUDP(key string, value interface{}) error {
 	p.database.Save(key, value)
 
 	for _, node := range p.memberlist.Members() {
-		if p.hasSameIpAs(node.Addr.String()) {
+		if p.hasDifferentIpAs(node.Addr.String()) {
 			broadcastMessage := BroadcastMessage{Key: key, Value: value}
 			serialisedBroadcastMessage, _ := json.Marshal(broadcastMessage)
 			p.statsDClient.Inc(p.hostname+postfixSource, int64(1), float32(1))
@@ -166,6 +165,6 @@ func (p *Prattle) JoinCluster(siblingAddr string) error {
 	}
 	return nil
 }
-func (prattle *Prattle) hasSameIpAs(ipAddress string) bool {
-	return prattle.ip == ipAddress;
+func (prattle *Prattle) hasDifferentIpAs(ipAddress string) bool {
+	return prattle.ip != ipAddress;
 }
