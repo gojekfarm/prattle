@@ -49,15 +49,15 @@ func main() {
 		defer r.Body.Close()
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		var data entry
 		json.Unmarshal(body, &data)
-		prattle.Set(data.Key, data.Value)
+		prattle.SetViaUDP(data.Key, data.Value)
 		json.NewEncoder(w).Encode(data)
 	})
-	fmt.Printf("Listening on :%d\n", *httpPort)
+	log.Println("Listening on :%d\n", *httpPort)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), nil); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }

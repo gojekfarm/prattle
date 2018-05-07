@@ -2,7 +2,6 @@ package prattle
 
 import (
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/gojekfarm/prattle/config"
@@ -56,7 +55,7 @@ func (client *Client) FetchHealthyNode(serviceName string) (string, error) {
 		return "", nil
 	}
 	for _, agentService := range services {
-		fmt.Println("member: " + agentService.Service.Address)
+		log.Println("member: " + agentService.Service.Address)
 		return agentService.Service.Address, nil
 	}
 	return "", errors.New("no healthy node found")

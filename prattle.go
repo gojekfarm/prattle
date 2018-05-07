@@ -2,15 +2,13 @@ package prattle
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
+	"net"
 	"os"
 	"time"
 
 	"github.com/hashicorp/memberlist"
-
-	"errors"
-	"net"
 
 	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/gojekfarm/prattle/config"
@@ -49,7 +47,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("member: " + member)
+	log.Println("member: " + member)
 	serviceID, err = consul.Register(discovery)
 	if err != nil {
 		return nil, err
@@ -66,7 +64,6 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		notifyMsg: func(b []byte) {
 			pair := &BroadcastMessage{}
 			json.Unmarshal(b, pair)
-			fmt.Println(d.Get(pair.Key))
 			statsDClient.Inc(hostname+postfixDest, int64(1), float32(1))
 			d.Save(pair.Key, pair.Value)
 		},

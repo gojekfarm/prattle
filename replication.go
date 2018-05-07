@@ -2,6 +2,7 @@ package prattle
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strings"
@@ -78,6 +79,6 @@ func newMemberlist(rpc_port int, members string, d *delegate) (*memberlist.Membe
 	}
 
 	node := m.LocalNode()
-	fmt.Printf("Local member %s:%d\n", node.Addr, node.Port)
+	log.Println("Local member %s:%d\n", node.Addr, node.Port)
 	return m, nil
 }

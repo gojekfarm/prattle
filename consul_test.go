@@ -1,6 +1,7 @@
 package prattle
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,8 +10,6 @@ import (
 	"github.com/gojekfarm/prattle/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"fmt"
-	"net"
 )
 
 //:TODO Refactor and remove time.sleep
@@ -59,7 +58,6 @@ func TestRegisterWhenANodeIsUnhealthy(t *testing.T) {
 	assert.NoError(t, regErr)
 	time.Sleep(1 * time.Second)
 	member, err := client.FetchHealthyNode(testServiceName)
-	fmt.Println(member)
 	assert.Equal(t, "", member)
 	assert.NoError(t, err)
 	deregErr := client.consulClient.Agent().ServiceDeregister(serviceID)
@@ -92,7 +90,6 @@ func TestTwoServicesRegistrationWhenOneIsUnhealthy(t *testing.T) {
 		Address: testServiceAddrTwo,
 		TTL:     "1s",
 	}
-	fmt.Println("health: " + testServiceAddrTwo)
 	idOne, regErrOne := client.Register(serviceOne)
 	idTwo, regErrTwo := client.Register(serviceTwo)
 	pingError := client.Ping("service:" + idOne)
