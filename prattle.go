@@ -89,6 +89,7 @@ func NewPrattle(consul *Client, rpcPort int, discovery config.Discovery) (*Pratt
 		ip:               ips[0].String(),
 	}, nil
 }
+
 func startPingWorker(ticker *time.Ticker, serviceID string, consul *Client) {
 	checkID := "service:" + serviceID
 	for range ticker.C {

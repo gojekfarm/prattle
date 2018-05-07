@@ -60,6 +60,7 @@ func (client *Client) FetchHealthyNode(serviceName string) (string, error) {
 	}
 	return "", errors.New("no healthy node found")
 }
+
 func (client *Client) Ping(checkID string) error {
 	return client.consulClient.Agent().UpdateTTL(checkID, "", consulAPI.HealthPassing)
 }
